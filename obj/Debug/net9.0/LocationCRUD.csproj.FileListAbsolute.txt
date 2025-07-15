@@ -181,8 +181,6 @@ C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\scopedcss\bundle\LocationCRUD.styles.css
-C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\compressed\z459cgzdav-xoteftz4t5.gz
-C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\compressed\55hgb9o4xy-zkxhazmfk8.gz
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\staticwebassets.build.json
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\staticwebassets.development.json
@@ -193,3 +191,6 @@ C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\LocationCRUD.pdb
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\LocationCRUD.genruntimeconfig.cache
 C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\ref\LocationCRUD.dll
+C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\LocationCRUD.sourcelink.json
+C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\compressed\z459cgzdav-a5u6nje5w3.gz
+C:\Users\shehr\OneDrive\Desktop\New folder\LocationManagementAPI\obj\Debug\net9.0\compressed\55hgb9o4xy-430rubcpvv.gz
