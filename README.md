@@ -57,9 +57,10 @@ A comprehensive .NET Core Web API application for managing hierarchical location
 
 2.  **Build and start Docker services**
     This command will build the .NET application image, set up the SQL Server container, and run the database initialization scripts.
-    \`\`\`bash
-    docker-compose up --build -d
-    \`\`\`
+      ```
+          docker-compose up --build -d
+
+      ```
     *   The `db-init` service will automatically create the `LocationManagerDb` database and seed it with initial data.
     *   The `locationcrud-app` service will be available on `http://localhost:5000` 
 
