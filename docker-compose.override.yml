@@ -1,0 +1,13 @@
+services:
+  locationcrud-app:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80 
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=LocationManagerDb;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=true;MultipleActiveResultSets=true
+    volumes:
+      - ./wwwroot:/app/wwwroot
+    ports:
+      - "5000:80" 
+  sqlserver:
+    ports:
+      - "6434:1433" 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocationCRUD.Data;
-using LocationCRUD.Models;
+using LocationCRUD.Models; // Ensure this includes both DTOs and ResponseDTOs
 
 namespace LocationCRUD.Controllers
 {
@@ -19,11 +19,19 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Country>>> GetCountries()
+        public async Task<ActionResult<IEnumerable<CountryResponseDto>>> GetCountries()
         {
             try
             {
-                return await _context.Countries.OrderBy(c => c.Name).ToListAsync();
+                return await _context.Countries
+                    .OrderBy(c => c.Name)
+                    .Select(c => new CountryResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code
+                    })
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -33,13 +41,19 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Country>> GetCountry(int id)
+        public async Task<ActionResult<CountryResponseDto>> GetCountry(int id)
         {
             try
             {
                 var country = await _context.Countries
-                    .Include(c => c.Provinces)
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                    .Where(c => c.Id == id)
+                    .Select(c => new CountryResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code
+                    })
+                    .FirstOrDefaultAsync();
 
                 if (country == null)
                 {
@@ -56,7 +70,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Country>> PostCountry(CountryDto countryDto)
+        public async Task<ActionResult<CountryResponseDto>> PostCountry(CountryDto countryDto)
         {
             try
             {
@@ -75,7 +89,8 @@ namespace LocationCRUD.Controllers
                 if (existingCountry != null)
                 {
                     _logger.LogInformation("Country already exists: {CountryName}", countryDto.Name);
-                    return Ok(existingCountry);
+                    // Return existing country as a DTO
+                    return Ok(new CountryResponseDto { Id = existingCountry.Id, Name = existingCountry.Name, Code = existingCountry.Code });
                 }
 
                 var country = new Country
@@ -88,7 +103,8 @@ namespace LocationCRUD.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Country created successfully: {CountryId}", country.Id);
-                return CreatedAtAction(nameof(GetCountry), new { id = country.Id }, country);
+                // Return the newly created country as a DTO
+                return CreatedAtAction(nameof(GetCountry), new { id = country.Id }, new CountryResponseDto { Id = country.Id, Name = country.Name, Code = country.Code });
             }
             catch (Exception ex)
             {

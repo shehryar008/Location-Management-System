@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocationCRUD.Data;
-using LocationCRUD.Models;
+using LocationCRUD.Models; // Ensure this includes both DTOs and ResponseDTOs
 
 namespace LocationCRUD.Controllers
 {
@@ -19,7 +19,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Location>>> GetLocations()
+        public async Task<ActionResult<IEnumerable<LocationResponseDto>>> GetLocations()
         {
             try
             {
@@ -27,6 +27,35 @@ namespace LocationCRUD.Controllers
                     .Include(l => l.City)
                     .ThenInclude(c => c.Province)
                     .ThenInclude(p => p.Country)
+                    .Select(l => new LocationResponseDto
+                    {
+                        Id = l.Id,
+                        Name = l.Name,
+                        Address = l.Address,
+                        Latitude = l.Latitude,
+                        Longitude = l.Longitude,
+                        CityId = l.CityId,
+                        City = new CityResponseDto
+                        {
+                            Id = l.City.Id,
+                            Name = l.City.Name,
+                            Code = l.City.Code,
+                            ProvinceId = l.City.ProvinceId,
+                            Province = new ProvinceResponseDto
+                            {
+                                Id = l.City.Province.Id,
+                                Name = l.City.Province.Name,
+                                Code = l.City.Province.Code,
+                                CountryId = l.City.Province.CountryId,
+                                Country = new CountryResponseDto
+                                {
+                                    Id = l.City.Province.Country.Id,
+                                    Name = l.City.Province.Country.Name,
+                                    Code = l.City.Province.Country.Code
+                                }
+                            }
+                        }
+                    })
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -37,7 +66,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Location>> GetLocation(int id)
+        public async Task<ActionResult<LocationResponseDto>> GetLocation(int id)
         {
             try
             {
@@ -45,7 +74,37 @@ namespace LocationCRUD.Controllers
                     .Include(l => l.City)
                     .ThenInclude(c => c.Province)
                     .ThenInclude(p => p.Country)
-                    .FirstOrDefaultAsync(l => l.Id == id);
+                    .Where(l => l.Id == id)
+                    .Select(l => new LocationResponseDto
+                    {
+                        Id = l.Id,
+                        Name = l.Name,
+                        Address = l.Address,
+                        Latitude = l.Latitude,
+                        Longitude = l.Longitude,
+                        CityId = l.City.Id,
+                        City = new CityResponseDto
+                        {
+                            Id = l.City.Id,
+                            Name = l.City.Name,
+                            Code = l.City.Code,
+                            ProvinceId = l.City.ProvinceId,
+                            Province = new ProvinceResponseDto
+                            {
+                                Id = l.City.Province.Id,
+                                Name = l.City.Province.Name,
+                                Code = l.City.Province.Code,
+                                CountryId = l.City.Province.CountryId,
+                                Country = new CountryResponseDto
+                                {
+                                    Id = l.City.Province.Country.Id,
+                                    Name = l.City.Province.Country.Name,
+                                    Code = l.City.Province.Country.Code
+                                }
+                            }
+                        }
+                    })
+                    .FirstOrDefaultAsync();
 
                 if (location == null)
                 {
@@ -62,7 +121,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Location>> PostLocation(LocationDto locationDto)
+        public async Task<ActionResult<LocationResponseDto>> PostLocation(LocationDto locationDto)
         {
             try
             {
@@ -95,14 +154,44 @@ namespace LocationCRUD.Controllers
                 _context.Locations.Add(location);
                 await _context.SaveChangesAsync();
 
-                // Return the location with related data
-                var createdLocation = await _context.Locations
+                // Return the location with related data as DTOs
+                var createdLocationDto = await _context.Locations
                     .Include(l => l.City)
                     .ThenInclude(c => c.Province)
                     .ThenInclude(p => p.Country)
-                    .FirstOrDefaultAsync(l => l.Id == location.Id);
+                    .Where(l => l.Id == location.Id)
+                    .Select(l => new LocationResponseDto
+                    {
+                        Id = l.Id,
+                        Name = l.Name,
+                        Address = l.Address,
+                        Latitude = l.Latitude,
+                        Longitude = l.Longitude,
+                        CityId = l.City.Id,
+                        City = new CityResponseDto
+                        {
+                            Id = l.City.Id,
+                            Name = l.City.Name,
+                            Code = l.City.Code,
+                            ProvinceId = l.City.ProvinceId,
+                            Province = new ProvinceResponseDto
+                            {
+                                Id = l.City.Province.Id,
+                                Name = l.City.Province.Name,
+                                Code = l.City.Province.Code,
+                                CountryId = l.City.Province.CountryId,
+                                Country = new CountryResponseDto
+                                {
+                                    Id = l.City.Province.Country.Id,
+                                    Name = l.City.Province.Country.Name,
+                                    Code = l.City.Province.Country.Code
+                                }
+                            }
+                        }
+                    })
+                    .FirstOrDefaultAsync();
 
-                return CreatedAtAction(nameof(GetLocation), new { id = location.Id }, createdLocation);
+                return CreatedAtAction(nameof(GetLocation), new { id = location.Id }, createdLocationDto);
             }
             catch (Exception ex)
             {

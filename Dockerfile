@@ -1,14 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0
-
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-COPY LocationCRUD.csproj ./
-RUN dotnet restore --disable-parallel
+COPY *.csproj ./
+RUN dotnet restore
 
 COPY . ./
-RUN dotnet publish LocationCRUD.csproj -c Release -o out
+RUN dotnet publish -c Release -o out
 
-ENV ASPNETCORE_URLS=http://+:5175
-EXPOSE 5175
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
 
-ENTRYPOINT ["dotnet", "out/LocationCRUD.dll"]
+COPY --from=build /app/out .
+
+RUN mkdir -p /app/logs
+
+EXPOSE 80
+
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+ENTRYPOINT ["dotnet", "LocationCRUD.dll"]

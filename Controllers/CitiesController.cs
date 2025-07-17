@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LocationCRUD.Data;
-using LocationCRUD.Models;
+using LocationCRUD.Models; // Ensure this includes both DTOs and ResponseDTOs
 
 namespace LocationCRUD.Controllers
 {
@@ -19,7 +19,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<City>>> GetCities()
+        public async Task<ActionResult<IEnumerable<CityResponseDto>>> GetCities()
         {
             try
             {
@@ -29,6 +29,26 @@ namespace LocationCRUD.Controllers
                     .OrderBy(c => c.Province.Country.Name)
                     .ThenBy(c => c.Province.Name)
                     .ThenBy(c => c.Name)
+                    .Select(c => new CityResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code,
+                        ProvinceId = c.ProvinceId,
+                        Province = new ProvinceResponseDto
+                        {
+                            Id = c.Province.Id,
+                            Name = c.Province.Name,
+                            Code = c.Province.Code,
+                            CountryId = c.Province.CountryId,
+                            Country = new CountryResponseDto
+                            {
+                                Id = c.Province.Country.Id,
+                                Name = c.Province.Country.Name,
+                                Code = c.Province.Country.Code
+                            }
+                        }
+                    })
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -39,13 +59,21 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet("by-province/{provinceId}")]
-        public async Task<ActionResult<IEnumerable<City>>> GetCitiesByProvince(int provinceId)
+        public async Task<ActionResult<IEnumerable<CityResponseDto>>> GetCitiesByProvince(int provinceId)
         {
             try
             {
                 return await _context.Cities
                     .Where(c => c.ProvinceId == provinceId)
                     .OrderBy(c => c.Name)
+                    .Select(c => new CityResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code,
+                        ProvinceId = c.ProvinceId
+                        // No need to include Province object here if not required by frontend
+                    })
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -56,15 +84,35 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<City>> GetCity(int id)
+        public async Task<ActionResult<CityResponseDto>> GetCity(int id)
         {
             try
             {
                 var city = await _context.Cities
                     .Include(c => c.Province)
                     .ThenInclude(p => p.Country)
-                    .Include(c => c.Locations)
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                    .Where(c => c.Id == id)
+                    .Select(c => new CityResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code,
+                        ProvinceId = c.ProvinceId,
+                        Province = new ProvinceResponseDto
+                        {
+                            Id = c.Province.Id,
+                            Name = c.Province.Name,
+                            Code = c.Province.Code,
+                            CountryId = c.Province.CountryId,
+                            Country = new CountryResponseDto
+                            {
+                                Id = c.Province.Country.Id,
+                                Name = c.Province.Country.Name,
+                                Code = c.Province.Country.Code
+                            }
+                        }
+                    })
+                    .FirstOrDefaultAsync();
 
                 if (city == null)
                 {
@@ -81,7 +129,7 @@ namespace LocationCRUD.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<City>> PostCity(CityDto cityDto)
+        public async Task<ActionResult<CityResponseDto>> PostCity(CityDto cityDto)
         {
             try
             {
@@ -107,7 +155,28 @@ namespace LocationCRUD.Controllers
                 if (existingCity != null)
                 {
                     _logger.LogInformation("City already exists: {CityName}", cityDto.Name);
-                    return Ok(existingCity);
+                    // Return existing city as a DTO
+                    var existingCityDto = await _context.Cities
+                        .Include(c => c.Province)
+                        .ThenInclude(p => p.Country)
+                        .Where(c => c.Id == existingCity.Id)
+                        .Select(c => new CityResponseDto
+                        {
+                            Id = c.Id,
+                            Name = c.Name,
+                            Code = c.Code,
+                            ProvinceId = c.ProvinceId,
+                            Province = new ProvinceResponseDto
+                            {
+                                Id = c.Province.Id,
+                                Name = c.Province.Name,
+                                Code = c.Province.Code,
+                                CountryId = c.Province.CountryId,
+                                Country = new CountryResponseDto { Id = c.Province.Country.Id, Name = c.Province.Country.Name, Code = c.Province.Country.Code }
+                            }
+                        })
+                        .FirstOrDefaultAsync();
+                    return Ok(existingCityDto);
                 }
 
                 var city = new City
@@ -120,14 +189,30 @@ namespace LocationCRUD.Controllers
                 _context.Cities.Add(city);
                 await _context.SaveChangesAsync();
 
-                // Return with province and country included
-                var createdCity = await _context.Cities
+                // Return with province and country included as DTOs
+                var createdCityDto = await _context.Cities
                     .Include(c => c.Province)
                     .ThenInclude(p => p.Country)
-                    .FirstOrDefaultAsync(c => c.Id == city.Id);
+                    .Where(c => c.Id == city.Id)
+                    .Select(c => new CityResponseDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Code = c.Code,
+                        ProvinceId = c.ProvinceId,
+                        Province = new ProvinceResponseDto
+                        {
+                            Id = c.Province.Id,
+                            Name = c.Province.Name,
+                            Code = c.Province.Code,
+                            CountryId = c.Province.CountryId,
+                            Country = new CountryResponseDto { Id = c.Province.Country.Id, Name = c.Province.Country.Name, Code = c.Province.Country.Code }
+                        }
+                    })
+                    .FirstOrDefaultAsync();
 
                 _logger.LogInformation("City created successfully: {CityId}", city.Id);
-                return CreatedAtAction(nameof(GetCity), new { id = city.Id }, createdCity);
+                return CreatedAtAction(nameof(GetCity), new { id = city.Id }, createdCityDto);
             }
             catch (Exception ex)
             {
