@@ -25,108 +25,64 @@ A comprehensive .NET Core Web API application for managing hierarchical location
 - **Auto-population**: Automatically creates database entries for selected locations
 
 ### 💾 Database Support
-- **In-Memory Database**: For development and testing
-- **SQL Server Support**: Ready for production with LocalDB/SQL Server
-- **Entity Framework Core**: Full ORM support with migrations
-- **Seed Data**: Sample data for quick testing
+- **SQL Server**: Persistent data storage using SQL Server, managed via Docker.
+- **Entity Framework Core**: Full ORM support for database interactions.
+- **Seed Data**: Sample data automatically loaded into the database on initialization.
 
 ## Technology Stack
 
-- **.NET 9.0**: Latest .NET framework
-- **ASP.NET Core Web API**: RESTful API architecture
-- **Entity Framework Core**: Object-relational mapping
-- **SQL Server/In-Memory Database**: Data persistence
-- **Leaflet.js**: Interactive mapping
-- **OpenStreetMap**: Free map tiles
-- **Bootstrap 5**: Responsive UI framework
-- **Vanilla JavaScript**: Frontend interactions
+- **.NET 8.0**: Latest .NET framework for the backend API.
+- **ASP.NET Core Web API**: RESTful API architecture.
+- **Entity Framework Core**: Object-relational mapping.
+- **SQL Server**: Relational database for data persistence.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **shadcn/ui**: Reusable UI components built with Tailwind CSS.
+- **Leaflet.js**: Interactive mapping library.
+- **OpenStreetMap**: Free map tiles.
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET 9.0 SDK or later
-- Visual Studio 2022 or VS Code
-- SQL Server LocalDB (optional, uses in-memory database by default)
+- **Docker Desktop**: Required to run the application and SQL Server in containers.
+- **.NET 8.0 SDK or later**: For local development and building the .NET application.
 
 ### Installation
 
-1. **Clone the repository**
-   \`\`\`bash
-   git clone <repository-url>
-   cd location-crud-app
-   \`\`\`
+1.  **Clone the repository**
+    \`\`\`bash
+    git clone <repository-url>
+    cd location-crud-app
+    \`\`\`
 
-2. **Restore packages**
-   \`\`\`bash
-   dotnet restore
-   \`\`\`
+2.  **Build and start Docker services**
+    This command will build the .NET application image, set up the SQL Server container, and run the database initialization scripts.
+    \`\`\`bash
+    docker-compose up --build -d
+    \`\`\`
+    *   The `db-init` service will automatically create the `LocationManagerDb` database and seed it with initial data.
+    *   The `locationcrud-app` service will be available on `http://localhost:5000` 
 
-3. **Run the application**
-   \`\`\`bash
-   dotnet run
-   \`\`\`
+3.  **Install frontend dependencies**
+    Navigate to the `app` directory (where `package.json` for the Next.js app is located) and install dependencies:
+    \`\`\`bash
+    cd app
+    npm install # or yarn install
+    \`\`\`
 
-4. **Access the application**
-   - Open your browser and navigate to \`https://localhost:5001\` or \`http://localhost:5000\`
-   - The application will automatically create the in-memory database
+### Access the Application
 
-### Database Setup (Optional)
+Once Docker services are up and running:
 
-To use SQL Server instead of in-memory database:
-
-1. **Update connection string** in \`appsettings.json\`:
-   \`\`\`json
-   {
-     "ConnectionStrings": {
-       "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=LocationManagerDb;Trusted_Connection=true;MultipleActiveResultSets=true"
-     }
-   }
-   \`\`\`
-
-2. **Update Program.cs** to use SQL Server:
-   \`\`\`csharp
-   builder.Services.AddDbContext<ApplicationDbContext>(options =>
-       options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-   \`\`\`
-
-3. **Run database scripts** (optional):
-   - Execute \`scripts/create-database.sql\` to create tables
-   - Execute \`scripts/seed-data.sql\` to add sample data
-
-
-## Usage Guide
-
-### Adding a New Location
-
-1. **Select Country**: Choose from the dropdown (data fetched from external API)
-2. **Select Province/State**: Automatically populated based on country selection
-3. **Select City**: Automatically populated based on province selection
-4. **Enter Location Details**:
-   - Location name (required)
-   - Address (optional)
-5. **Set Coordinates**:
-   - Click "Get Coordinates from Address" for automatic geocoding
-   - Or click directly on the map to set coordinates manually
-6. **Save Location**: Click "Save Location" to create the entry
-
-### Map Interactions
-
-- **Blue Markers**: Show your current selection or location being edited
-- **Red Markers**: Show all saved locations from the database
-- **Click Map**: Set coordinates by clicking anywhere on the map
-- **Click Markers**: View location details and access edit/delete options
-- **Map Controls**:
-  - "Show All Locations": Fit map to display all saved locations
-  - "Clear Selection": Remove temporary markers and coordinates
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+-   **Main Application (Development)**: Open your browser and navigate to `http://localhost:5000`
+-   **Main Application (Production/Docker)**: Open your browser and navigate to `http://localhost:8080`
+-   **Swagger API Documentation**: `http://localhost:8080/swagger`
+-   **Health Check**: `http://localhost:8080/health`
 
 ## Acknowledgments
 
-- **OpenStreetMap**: For providing free map tiles
-- **Leaflet.js**: For the excellent mapping library
-- **countriesnow.space**: For the countries/states/cities API
-- **Bootstrap**: For the responsive UI framework
+-   **OpenStreetMap**: For providing free map tiles.
+-   **Leaflet.js**: For the excellent mapping library.
+-   **countriesnow.space**: For the countries/states/cities API.
+-   **Next.js**: For the powerful React framework.
+-   **Tailwind CSS & shadcn/ui**: For modern and efficient UI development.
