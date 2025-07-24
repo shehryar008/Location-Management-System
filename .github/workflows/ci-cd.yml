@@ -1,4 +1,3 @@
-# .github/workflows/ci-cd.yml
 name: CI/CD Pipeline
 
 permissions:
@@ -71,13 +70,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up SSH agent
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add server to known hosts
-        run: ssh-keyscan -H 39.45.18.6 >> ~/.ssh/known_hosts
+      - name: Prepare SSH key and agent
+        run: |
+          # Create .ssh dir
+          mkdir -p ~/.ssh
+          # Write private key, stripping Windows CR characters
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # Start ssh-agent and add the key
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_rsa
+          # Add server to known_hosts to avoid prompt
+          ssh-keyscan -H 39.45.18.6 >> ~/.ssh/known_hosts
 
       - name: Deploy to server
         run: |
