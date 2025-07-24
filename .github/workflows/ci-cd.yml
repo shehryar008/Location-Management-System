@@ -66,16 +66,27 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
             ghcr.io/${{ github.repository_owner }}/locationcrud-app:${{ github.sha }}
 
-  deploy:
+    deploy:
     needs: build-and-push-image
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
-      - name: Deploy to your server
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install SSH key
         run: |
-          ssh deploy@203.0.113.45 "docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest && \
-                                   docker rm -f locationcrud-app || true && \
-                                   docker run -d --name locationcrud-app -p 5000:80 \
-                                     ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest"
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # (Optional) add your server to known_hosts to avoid prompt
+          ssh-keyscan -H 203.0.113.45 >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh deploy@203.0.113.45 "\
+            docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest && \
+            docker rm -f locationcrud-app || true && \
+            docker run -d --name locationcrud-app -p 5000:80 \
+              ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest\
+          "
