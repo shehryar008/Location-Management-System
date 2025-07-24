@@ -73,10 +73,9 @@ jobs:
     steps:
       - name: Deploy to your server
         run: |
-          ssh your-user@your-server "docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest && \
-                                     docker stop locationcrud-app || true && \
-                                     docker rm locationcrud-app || true && \
-                                     docker run -d --name locationcrud-app -p 8080:80 \
-                                       ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest"
+          ssh deploy@203.0.113.45 "docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest && \
+                                   docker rm -f locationcrud-app || true && \
+                                   docker run -d --name locationcrud-app -p 5000:80 \
+                                     ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest"
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
