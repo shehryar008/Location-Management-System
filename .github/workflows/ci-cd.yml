@@ -64,21 +64,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install SSH key
+      - name: Install SSH key and known_hosts
         run: |
-          # Create SSH dir
+          # Create .ssh folder
           mkdir -p ~/.ssh
-          # Write the private key, preserving newlines
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+
+          # Write the private key, preserving all newlines
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # Add GitHub and your server to known_hosts to avoid prompts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          ssh-keyscan 39.45.18.6 >> ~/.ssh/known_hosts
+          # Add GitHub RSA host key (ignore errors)
+          ssh-keyscan -t rsa github.com 2>/dev/null >> ~/.ssh/known_hosts || true
+          # Add your EC2 host's RSA key (ignore errors)
+          ssh-keyscan -t rsa 39.45.18.6 2>/dev/null >> ~/.ssh/known_hosts || true
 
       - name: Deploy over SSH
         run: |
-          ssh ubuntu@39.45.18.6 << 'EOF'
+          ssh -o StrictHostKeyChecking=yes ubuntu@39.45.18.6 << 'EOF'
             docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
             docker rm -f locationcrud-app || true
             docker run -d \
@@ -86,4 +89,3 @@ jobs:
               -p 5000:80 \
               ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
           EOF
-
