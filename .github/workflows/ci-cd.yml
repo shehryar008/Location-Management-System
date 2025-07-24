@@ -1,0 +1,79 @@
+name: CI/CD Pipeline
+
+# Trigger on pushes to master and on pull requests
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout code
+      - uses: actions/checkout@v3
+
+      # 2) Setup .NET SDK
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      # 3) Restore dependencies
+      - name: dotnet restore
+        run: dotnet restore
+
+      # 4) Run tests (if you have any)
+      - name: dotnet test
+        run: dotnet test --no-restore --verbosity normal
+
+      # 5) Publish output
+      - name: dotnet publish
+        run: dotnet publish -c Release -o published
+
+      # 6) Archive build artifacts (optional)
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: drop
+          path: published/
+
+  build-and-push-image:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v3
+
+      # Login to GitHub Container Registry (or Docker Hub)
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
+            ghcr.io/${{ github.repository_owner }}/locationcrud-app:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+      - name: Deploy to your server
+        run: |
+          ssh your-user@your-server "docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest && \
+                                     docker stop locationcrud-app || true && \
+                                     docker rm locationcrud-app || true && \
+                                     docker run -d --name locationcrud-app -p 8080:80 \
+                                       ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest"
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
