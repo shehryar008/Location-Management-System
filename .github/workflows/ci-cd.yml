@@ -1,5 +1,8 @@
 name: CI/CD Pipeline
-
+permissions:
+  contents: read       # for checkout
+  packages: write      # allow pushing to GHCR
+  id-token: write
 # Trigger on pushes to master and on pull requests
 on:
   push:
