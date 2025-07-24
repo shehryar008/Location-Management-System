@@ -9,15 +9,16 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repo
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-dotnet@v3
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
@@ -30,7 +31,7 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -o published
 
-      - name: Upload artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: drop
@@ -40,52 +41,62 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repo
+        uses: actions/checkout@v3
 
-      - name: Login to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
+          tags: ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
 
-  deploy:
+  deploy-local:
     needs: build-and-push-image
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Install SSH key and known_hosts
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull latest Docker image
         run: |
-          # Create .ssh folder
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
 
-          # Write the private key, preserving all newlines
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # Add GitHub RSA host key (ignore errors)
-          ssh-keyscan -t rsa github.com 2>/dev/null >> ~/.ssh/known_hosts || true
-          # Add your EC2 host's RSA key (ignore errors)
-          ssh-keyscan -t rsa 39.45.18.6 2>/dev/null >> ~/.ssh/known_hosts || true
-
-      - name: Deploy over SSH
+      - name: Stop and remove old container
         run: |
-          ssh -o StrictHostKeyChecking=yes ubuntu@39.45.18.6 << 'EOF'
-            docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
-            docker rm -f locationcrud-app || true
-            docker run -d \
-              --name locationcrud-app \
-              -p 5000:80 \
-              ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
-          EOF
+          docker rm -f locationcrud-app || true
+
+      - name: Run container locally
+        run: |
+          docker run -d \
+            --name locationcrud-app \
+            -p 5000:80 \
+            ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
+
+      - name: Smoke-test HTTP endpoint
+        run: |
+          echo "Waiting for container to be up..."
+          for i in {1..10}; do
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:5000 | grep -q "200"; then
+              echo "➜ Application is responding!"
+              exit 0
+            else
+              echo "Waiting... ($i/10)"
+              sleep 3
+            fi
+          done
+          echo "❌ Application did not respond in time."; exit 1
