@@ -100,3 +100,4 @@ jobs:
             fi
           done
           echo "❌ Application did not respond in time."; exit 1
+#
