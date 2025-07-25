@@ -44,7 +44,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -60,27 +60,27 @@ jobs:
 
   deploy-local:
     needs: build-and-push-image
-    runs-on: ubuntu-latest
+    # This must match the labels you gave your self‑hosted runner
+    runs-on: [ self-hosted, local ]
     steps:
       - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull latest Docker image
-        run: |
-          docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
+      - name: Pull latest image
+        run: docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
 
-      - name: Stop and remove old container
+      - name: Stop & remove existing container
         run: |
           docker rm -f locationcrud-app || true
 
-      - name: Run container locally
+      - name: Run container on localhost:5000
         run: |
           docker run -d \
             --name locationcrud-app \
@@ -90,14 +90,13 @@ jobs:
       - name: Smoke-test HTTP endpoint
         run: |
           echo "Waiting for container to be up..."
-          for i in {1..10}; do
+          for i in $(seq 1 10); do
             if curl -s -o /dev/null -w "%{http_code}" http://localhost:5000 | grep -q "200"; then
               echo "➜ Application is responding!"
               exit 0
-            else
-              echo "Waiting... ($i/10)"
-              sleep 3
             fi
+            echo "Waiting... ($i/10)"
+            sleep 3
           done
-          echo "❌ Application did not respond in time."; exit 1
-##
+          echo "❌ Application did not respond in time."
+          exit 1
