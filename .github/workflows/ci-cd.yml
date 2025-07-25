@@ -14,25 +14,17 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - run: dotnet restore
+      - run: dotnet test --no-restore
+      - run: dotnet publish -c Release -o published
 
-      - name: Run tests
-        run: dotnet test --no-restore
-
-      - name: Publish
-        run: dotnet publish -c Release -o published
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: drop
           path: published/
@@ -41,18 +33,15 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v2
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v4
         with:
           context: .
           push: true
@@ -62,11 +51,10 @@ jobs:
     needs: build-and-push-image
     runs-on: [ self-hosted, local ]
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v2
+      - uses: docker/login-action@v2
+        name: Login to GHCR
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -83,13 +71,13 @@ jobs:
         run: docker run -d --name locationcrud-app -p 5000:80 ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
 
       - name: Smoke-test HTTP endpoint
-        shell: pwsh
+        shell: powershell
         run: |
           $max = 10
           $i = 0
           while ($i -lt $max) {
             try {
-              $resp = Invoke-WebRequest -UseBasicParsing -Uri http://localhost:5000 -Method Head -ErrorAction Stop
+              $resp = Invoke-WebRequest -Uri http://localhost:5000 -Method Head -ErrorAction Stop
               if ($resp.StatusCode -eq 200) {
                 Write-Host "✅ Application is responding!"
                 exit 0
