@@ -60,7 +60,6 @@ jobs:
 
   deploy-local:
     needs: build-and-push-image
-    # This must match the labels you gave your self‑hosted runner
     runs-on: [ self-hosted, local ]
     steps:
       - name: Check out repo
@@ -77,8 +76,8 @@ jobs:
         run: docker pull ghcr.io/${{ github.repository_owner }}/locationcrud-app:latest
 
       - name: Stop & remove existing container
-        run: |
-          docker rm -f locationcrud-app || true
+        run: docker rm -f locationcrud-app
+        continue-on-error: true
 
       - name: Run container on localhost:5000
         run: |
@@ -100,3 +99,5 @@ jobs:
           done
           echo "❌ Application did not respond in time."
           exit 1
+        shell: bash
+
