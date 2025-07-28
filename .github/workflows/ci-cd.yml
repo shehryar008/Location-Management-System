@@ -61,7 +61,8 @@ jobs:
       - name: Build, tag & push image to ECR
         id: push-image
         run: |
-          IMAGE_URI=${{ secrets.ECR_REPOSITORY }}:latest
+          echo "ECR_REPOSITORY='${{ secrets.ECR_REPOSITORY }}'"
+          IMAGE_URI="${{ secrets.ECR_REPOSITORY }}:latest"
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
           echo "image_uri=$IMAGE_URI" >> $GITHUB_OUTPUT
